@@ -1,5 +1,8 @@
 # Tautulli API Proxy
 
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A custom API proxy service for Tautulli that provides simplified endpoints for recently added content.
 
 ## Features
@@ -79,6 +82,26 @@ export TAUTULLI_API_PORT=3008
 ```bash
 npm start
 ```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## Support
+
+- Open an issue for any bugs or feature requests
+- Star the repository if you find it useful
+- Fork it to contribute your own improvements
+
+## Security
+
+For security issues, please email [your-email@domain.com] instead of using the issue tracker.
 
 ## GitHub Actions
 
