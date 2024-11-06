@@ -51,6 +51,8 @@ services:
     container_name: tautulli-custom-api
     ports:
       - "${TAUTULLI_API_PORT}:${TAUTULLI_API_PORT}"
+    env_file:
+      - .env 
     restart: unless-stopped
 ```
 
