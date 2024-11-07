@@ -2,7 +2,9 @@
 
 A custom API proxy service designed to work with [Homepage](https://github.com/gethomepage/homepage) to display recent media from Tautulli in a formatted way. This service provides endpoints for recently added TV shows and movies from your Plex server via Tautulli.
 
-![Homelab-11-05-2024_06_48_PM](https://github.com/user-attachments/assets/5f5647d1-2723-4a76-853a-00d280443b54)
+| Desktop | Mobile Portrait | Moblie Landscape |
+|----------|-------------|---------|
+| ![Desktop](https://github.com/user-attachments/assets/f05d7f86-583c-430e-8d9f-40af4a800d61) | ![Mobile_Portrait](https://github.com/user-attachments/assets/4ad7a111-357f-4a5a-b1e7-9e6380bb7aec) | ![Moblie_Landscape](https://github.com/user-attachments/assets/e2dccb4a-96bc-45bf-84fe-404af3c19d0a) |
 
 ## Features
 
