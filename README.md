@@ -1,4 +1,5 @@
 # Tautulli Custom API for Homepage
+# $${\color{red}This \space is \space currently \space broken \space working \space on \space fixing \space it}$$
 
 A custom API proxy service designed to work with [Homepage](https://github.com/gethomepage/homepage) to display recent media from Tautulli in a formatted way. This service provides endpoints for recently added TV shows and movies from your Plex server via Tautulli.
 
