@@ -1,21 +1,20 @@
 # Tautulli Custom API for Homepage
-# $${\color{red}This \space is \space currently \space broken \space working \space on \space fixing \space it}$$
 
 A custom API proxy service designed to work with [Homepage](https://github.com/gethomepage/homepage) to display recent media from Tautulli in a formatted way. This service provides endpoints for recently added TV shows and movies from your Plex server via Tautulli.
 
-| Desktop | Mobile Portrait | Moblie Landscape |
-|----------|-------------|---------|
-| ![Desktop](https://github.com/user-attachments/assets/f05d7f86-583c-430e-8d9f-40af4a800d61) | ![Mobile_Portrait](https://github.com/user-attachments/assets/4ad7a111-357f-4a5a-b1e7-9e6380bb7aec) | ![Moblie_Landscape](https://github.com/user-attachments/assets/e2dccb4a-96bc-45bf-84fe-404af3c19d0a) |
+
+![Tautulli-API-Manager-11-20-2024_10_29_AM](https://github.com/user-attachments/assets/4db2fcc6-d083-4344-8f89-284f08e80d4e)
 
 ## Features
 
 - Dedicated endpoints for TV shows and movies
+- Dynamic section ID management through web UI
 - Customizable number of items returned
 - Relative timestamps (e.g., "2 hours ago")
 - Formatted media information:
   - Shows: "Show Name - S01E01 - Episode Title"
   - Movies: "Movie Title - Year"
-- Docker support
+- Docker support with persistent configuration
 
 ## Prerequisites
 
@@ -30,7 +29,7 @@ A custom API proxy service designed to work with [Homepage](https://github.com/g
 docker pull ghcr.io/10mfox/gethomepage-tautulli-custom-api:latest
 ```
 
-2. Create a `docker-compose.yml`:
+2. Create a docker-compose.yml:
 ```yaml
 version: '3'
 services:
@@ -43,19 +42,8 @@ services:
       - TAUTULLI_API_KEY=your_tautulli_api_key
     ports:
       - "3008:3008"
-    restart: unless-stopped
-```
-Or this If You Added All 3 Environment Variables
-```yaml
-version: '3'
-services:
-  tautulli-api:
-    image: ghcr.io/10mfox/gethomepage-tautulli-custom-api:latest
-    container_name: tautulli-custom-api
-    ports:
-      - "${TAUTULLI_API_PORT}:${TAUTULLI_API_PORT}"
-    env_file:
-      - .env 
+    volumes:
+      - ./config:/app/config
     restart: unless-stopped
 ```
 
@@ -63,6 +51,8 @@ services:
 ```bash
 docker-compose up -d
 ```
+
+4. Access the web UI at `http://localhost:3008` to manage your section IDs.
 
 ## Environment Variables
 
@@ -74,23 +64,22 @@ docker-compose up -d
 
 ## API Endpoints
 
-### Get Recent TV Shows
+### Configuration
 ```
-GET /api/recent/shows?count=5
+GET /api/sections
+POST /api/sections
 ```
-Returns recent TV show episodes with formatted titles and relative timestamps.
+Manage section IDs through the web interface or API directly.
 
-### Get Recent Movies
+### Media Endpoints
 ```
-GET /api/recent/movies?count=5
+GET /api/recent/{sectionType}?count=5
 ```
-Returns recent movies with formatted titles and relative timestamps.
+Returns recent media items for the specified section type with formatted titles and relative timestamps.
 
-All endpoints accept a `count` query parameter to specify the number of items to return.
+### Response Format
 
-## Response Format
-
-### TV Shows
+#### TV Shows
 ```json
 {
   "response": {
@@ -104,7 +93,7 @@ All endpoints accept a `count` query parameter to specify the number of items to
 }
 ```
 
-### Movies
+#### Movies
 ```json
 {
   "response": {
@@ -127,6 +116,9 @@ The `added` field uses relative time formatting:
 - "X weeks ago" - for < 1 month
 - "X months ago" - for < 1 year
 - "X years ago" - for >= 1 year
+
+## Configuration Persistence
+Section configurations are stored in `/app/config/config.json` and persist across container restarts.
 
 ## Contributing
 

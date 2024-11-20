@@ -1,4 +1,3 @@
-// logger.js
 const colors = {
   reset: '\x1b[0m',
   bright: '\x1b[1m',
@@ -23,7 +22,7 @@ function formatEndpoint(baseUrl, endpoint, description) {
   return `${colors.green}▸ ${colors.bright}${baseUrl}${endpoint}${colors.reset}\n  ${colors.dim}${description}${colors.reset}`;
 }
 
-function logServerStart(port) {
+function logServerStart(port, sections = {}) {
   const baseUrl = `http://localhost:${port}`;
   
   console.log(banner);
@@ -33,17 +32,18 @@ function logServerStart(port) {
   console.log(`${colors.white}▸ Environment: ${colors.yellow}${process.env.NODE_ENV || 'development'}${colors.reset}\n`);
   
   console.log(`${colors.cyan}${colors.bright}AVAILABLE ENDPOINTS${colors.reset}`);
-  console.log(formatEndpoint(
-    baseUrl,
-    '/api/recent/shows?count=5',
-    'Get recently added TV Shows content'
-  ));
-  console.log(formatEndpoint(
-    baseUrl,
-    '/api/recent/movies?count=5',
-    'Get recently added Movie content'
-  ));
-  console.log(); // Add empty line at the end
+  Object.keys(sections).forEach(section => {
+    console.log(formatEndpoint(
+      baseUrl,
+      `/api/recent/${section}?count=5`,
+      `Get recently added ${section} content`
+    ));
+  });
+  
+  if (Object.keys(sections).length === 0) {
+    console.log(`${colors.dim}No sections configured. Configure sections at ${baseUrl}${colors.reset}`);
+  }
+  console.log();
 }
 
 function logError(context, error) {

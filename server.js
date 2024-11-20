@@ -1,187 +1,207 @@
 const express = require('express');
 const axios = require('axios');
+const path = require('path');
+const { loadConfig, saveConfig } = require('./config');
 const app = express();
-const PORT = process.env.TAUTULLI_API_PORT;
+const PORT = process.env.PORT || 3008;
 const { logServerStart, logError, colors } = require('./logger');
 
-// Configuration
-const config = {
-  baseUrl: process.env.TAUTULLI_BASE_URL,
-  apiKey: process.env.TAUTULLI_API_KEY,
-  sections: {
-    shows: 3
-  }
+// Global config object
+let config = {
+    baseUrl: process.env.TAUTULLI_BASE_URL,
+    apiKey: process.env.TAUTULLI_API_KEY,
+    sections: {}
 };
 
-// Middleware to parse JSON
+// Initialize config
+async function initializeConfig() {
+    try {
+        const savedConfig = await loadConfig();
+        config.sections = savedConfig.sections;
+        console.log(`${colors.green}✓${colors.reset} ${colors.dim}Loaded configuration${colors.reset}`);
+    } catch (error) {
+        console.error('Failed to load config:', error);
+    }
+}
+
+// Middleware
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'frontend/build')));
 
 // Function to format date to relative time
 function getRelativeTime(timestamp) {
-  if (!timestamp) return '';
-  
-  const now = new Date().getTime() / 1000; // Convert to seconds
-  const time = parseInt(timestamp);
-  const diff = now - time;
-  
-  // Define time intervals in seconds
-  const intervals = {
-    year: 31536000,
-    month: 2592000,
-    week: 604800,
-    day: 86400,
-    hour: 3600,
-    minute: 60,
-    second: 1
-  };
+    if (!timestamp) return '';
+    
+    const now = new Date().getTime() / 1000;
+    const time = parseInt(timestamp);
+    const diff = now - time;
+    
+    const intervals = {
+        year: 31536000,
+        month: 2592000,
+        week: 604800,
+        day: 86400,
+        hour: 3600,
+        minute: 60,
+        second: 1
+    };
 
-  // Find the appropriate interval
-  for (let [unit, secondsInUnit] of Object.entries(intervals)) {
-    const interval = Math.floor(diff / secondsInUnit);
-    if (interval >= 1) {
-      return interval === 1 ? `1 ${unit} ago` : `${interval} ${unit}s ago`;
+    for (let [unit, secondsInUnit] of Object.entries(intervals)) {
+        const interval = Math.floor(diff / secondsInUnit);
+        if (interval >= 1) {
+            return interval === 1 ? `1 ${unit} ago` : `${interval} ${unit}s ago`;
+        }
     }
-  }
-  
-  return 'Just now';
+    
+    return 'Just now';
 }
 
-// Function to format the show title with all components
+// Function to format show title
 function formatShowTitle(item) {
-  if (item.grandparent_title && item.parent_media_index && item.media_index && item.title) {
-    return `${item.grandparent_title} - S${item.parent_media_index}E${item.media_index} - ${item.title}`;
-  }
-  return item.title || '';
+    if (item.grandparent_title && item.parent_media_index && item.media_index && item.title) {
+        return `${item.grandparent_title} - S${String(item.parent_media_index).padStart(2, '0')}E${String(item.media_index).padStart(2, '0')} - ${item.title}`;
+    }
+    return item.title || '';
 }
 
-// Function to transform show data
+// Transform show data
 function transformShowData(data) {
-  if (!data || typeof data !== 'object') {
-    return data;
-  }
-
-  // If it's an array, map over it
-  if (Array.isArray(data)) {
-    return data.map(item => ({
-      added: getRelativeTime(item.added_at),
-      combined_title: formatShowTitle(item)
-    }));
-  }
-
-  // If it's an object with a data property, process it
-  const transformed = {};
-  for (const key in data) {
-    if (Array.isArray(data[key])) {
-      transformed[key] = data[key].map(item => ({
-        added: getRelativeTime(item.added_at),
-        combined_title: formatShowTitle(item)
-      }));
-    } else if (typeof data[key] === 'object' && data[key] !== null) {
-      transformed[key] = transformShowData(data[key]);
-    } else {
-      transformed[key] = data[key];
+    if (!data || typeof data !== 'object') {
+        return data;
     }
-  }
-  return transformed;
+
+    if (Array.isArray(data)) {
+        return data.map(item => ({
+            added: getRelativeTime(item.added_at),
+            combined_title: formatShowTitle(item)
+        }));
+    }
+
+    const transformed = {};
+    for (const key in data) {
+        if (Array.isArray(data[key])) {
+            transformed[key] = data[key].map(item => ({
+                added: getRelativeTime(item.added_at),
+                combined_title: formatShowTitle(item)
+            }));
+        } else if (typeof data[key] === 'object' && data[key] !== null) {
+            transformed[key] = transformShowData(data[key]);
+        } else {
+            transformed[key] = data[key];
+        }
+    }
+    return transformed;
 }
 
-// Function to transform movie data
+// Transform movie data
 function transformMovieData(data) {
-  if (!data || typeof data !== 'object') {
-    return data;
-  }
-
-  // If it's an array, map over it
-  if (Array.isArray(data)) {
-    return data.map(item => ({
-      added: getRelativeTime(item.added_at),
-      combined_title: `${item.title || ''} - ${item.year || ''}`
-    }));
-  }
-
-  // If it's an object with a data property, process it
-  const transformed = {};
-  for (const key in data) {
-    if (Array.isArray(data[key])) {
-      transformed[key] = data[key].map(item => ({
-        added: getRelativeTime(item.added_at),
-        combined_title: `${item.title || ''} - ${item.year || ''}`
-      }));
-    } else if (typeof data[key] === 'object' && data[key] !== null) {
-      transformed[key] = transformMovieData(data[key]);
-    } else {
-      transformed[key] = data[key];
+    if (!data || typeof data !== 'object') {
+        return data;
     }
-  }
-  return transformed;
+
+    if (Array.isArray(data)) {
+        return data.map(item => ({
+            added: getRelativeTime(item.added_at),
+            combined_title: `${item.title || ''} - ${item.year || ''}`
+        }));
+    }
+
+    const transformed = {};
+    for (const key in data) {
+        if (Array.isArray(data[key])) {
+            transformed[key] = data[key].map(item => ({
+                added: getRelativeTime(item.added_at),
+                combined_title: `${item.title || ''} - ${item.year || ''}`
+            }));
+        } else if (typeof data[key] === 'object' && data[key] !== null) {
+            transformed[key] = transformMovieData(data[key]);
+        } else {
+            transformed[key] = data[key];
+        }
+    }
+    return transformed;
 }
 
-// Shows endpoint
-app.get('/api/recent/shows', async (req, res) => {
-  try {
-    const count = req.query.count || 5;
-
-    const response = await axios.get(config.baseUrl, {
-      params: {
-        apikey: config.apiKey,
-        cmd: 'get_recently_added',
-        count: count,
-        section_id: config.sections.shows
-      }
-    });
-
-    const modifiedData = transformShowData(response.data);
-    console.log(`${colors.green}✓${colors.reset} ${colors.dim}Successfully fetched ${count} shows${colors.reset}`);
-    res.json(modifiedData);
-  } catch (error) {
-    logError('Shows API', error);
-    res.status(500).json({ 
-      error: 'Internal Server Error',
-      message: error.message 
-    });
-  }
+// API Routes
+app.get('/api/sections', (req, res) => {
+    res.json({ sections: config.sections });
 });
 
-// Movies endpoint
-app.get('/api/recent/movies', async (req, res) => {
-  try {
-    const count = req.query.count || 5;
-
-    const response = await axios.get(config.baseUrl, {
-      params: {
-        apikey: config.apiKey,
-        cmd: 'get_recently_added',
-        count: count,
-        media_type: 'movie'
-      }
-    });
-
-    const modifiedData = transformMovieData(response.data);
-    console.log(`${colors.green}✓${colors.reset} ${colors.dim}Successfully fetched ${count} movies${colors.reset}`);
-    res.json(modifiedData);
-  } catch (error) {
-    logError('Movies API', error);
-    res.status(500).json({ 
-      error: 'Internal Server Error',
-      message: error.message 
-    });
-  }
+app.post('/api/sections', async (req, res) => {
+    try {
+        const { sections } = req.body;
+        config.sections = sections;
+        await saveConfig({ sections });
+        console.log(`${colors.green}✓${colors.reset} ${colors.dim}Updated sections configuration${colors.reset}`);
+        logServerStart(PORT, config.sections);
+        res.json({ success: true, sections: config.sections });
+    } catch (error) {
+        logError('Update Sections', error);
+        res.status(500).json({ 
+            error: 'Internal Server Error',
+            message: error.message 
+        });
+    }
 });
 
-// Add request logging middleware
+// Dynamic section endpoint handler
+app.get('/api/recent/:sectionType', async (req, res) => {
+    try {
+        const { sectionType } = req.params;
+        const count = req.query.count || 5;
+        const sectionId = config.sections[sectionType];
+
+        if (!sectionId) {
+            return res.status(404).json({ error: 'Section not found' });
+        }
+
+        const response = await axios.get(config.baseUrl, {
+            params: {
+                apikey: config.apiKey,
+                cmd: 'get_recently_added',
+                count: count,
+                section_id: sectionId
+            }
+        });
+
+        const transformFunction = sectionType.toLowerCase() === 'movies' ? 
+                                transformMovieData : 
+                                transformShowData;
+        
+        const modifiedData = transformFunction(response.data);
+        console.log(`${colors.green}✓${colors.reset} ${colors.dim}Successfully fetched ${count} items from ${sectionType}${colors.reset}`);
+        res.json(modifiedData);
+    } catch (error) {
+        logError(`${req.params.sectionType} API`, error);
+        res.status(500).json({ 
+            error: 'Internal Server Error',
+            message: error.message 
+        });
+    }
+});
+
+// Request logging middleware
 app.use((req, res, next) => {
-  const start = Date.now();
-  res.on('finish', () => {
-    const duration = Date.now() - start;
-    const status = res.statusCode;
-    const statusColor = status >= 500 ? colors.red : status >= 400 ? colors.yellow : colors.green;
-    console.log(
-      `${colors.dim}${req.method}${colors.reset} ${req.url} ${statusColor}${status}${colors.reset} ${colors.dim}${duration}ms${colors.reset}`
-    );
-  });
-  next();
+    const start = Date.now();
+    res.on('finish', () => {
+        const duration = Date.now() - start;
+        const status = res.statusCode;
+        const statusColor = status >= 500 ? colors.red : status >= 400 ? colors.yellow : colors.green;
+        console.log(
+            `${colors.dim}${req.method}${colors.reset} ${req.url} ${statusColor}${status}${colors.reset} ${colors.dim}${duration}ms${colors.reset}`
+        );
+    });
+    next();
 });
 
-app.listen(PORT, () => {
-  logServerStart(PORT);
+// Frontend catch-all route
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'frontend/build', 'index.html'));
+});
+
+// Initialize and start server
+initializeConfig().then(() => {
+    app.listen(PORT, () => {
+        logServerStart(PORT, config.sections);
+    });
 });

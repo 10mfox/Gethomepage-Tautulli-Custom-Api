@@ -1,0 +1,46 @@
+const fs = require('fs').promises;
+const path = require('path');
+
+const CONFIG_FILE = path.join(__dirname, 'config', 'config.json');
+
+async function loadConfig() {
+    try {
+        // Ensure config directory exists
+        await fs.mkdir(path.dirname(CONFIG_FILE), { recursive: true });
+        
+        try {
+            const data = await fs.readFile(CONFIG_FILE, 'utf8');
+            return JSON.parse(data);
+        } catch (error) {
+            // If file doesn't exist or is invalid, return default config
+            const defaultConfig = {
+                sections: {
+                    movies: 2,
+					shows: 3
+                }
+            };
+            // Save default config
+            await saveConfig(defaultConfig);
+            return defaultConfig;
+        }
+    } catch (error) {
+        console.error('Error managing config:', error);
+        // Return default config even if saving fails
+        return {
+            sections: {
+                shows: 3
+            }
+        };
+    }
+}
+
+async function saveConfig(config) {
+    // Ensure config directory exists
+    await fs.mkdir(path.dirname(CONFIG_FILE), { recursive: true });
+    await fs.writeFile(CONFIG_FILE, JSON.stringify(config, null, 2), 'utf8');
+}
+
+module.exports = {
+    loadConfig,
+    saveConfig
+};
