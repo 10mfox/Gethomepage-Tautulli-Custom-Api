@@ -2,8 +2,7 @@
 
 A custom API proxy service designed to work with [Homepage](https://github.com/gethomepage/homepage) to display recent media from Tautulli in a formatted way. This service provides endpoints for recently added TV shows and movies from your Plex server via Tautulli.
 
-
-![Tautulli-API-Manager-11-20-2024_10_29_AM](https://github.com/user-attachments/assets/4db2fcc6-d083-4344-8f89-284f08e80d4e)
+![Tautulli-API-Manager-11-20-2024_11_17_AM](https://github.com/user-attachments/assets/45281f36-8894-4add-b47c-d32a41d1b58e)
 
 ## Features
 
