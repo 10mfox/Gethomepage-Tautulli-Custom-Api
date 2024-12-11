@@ -20,6 +20,24 @@ A custom API proxy service designed to work with [Homepage](https://github.com/g
 - Tautulli server running and accessible
 - Tautulli API key
 - Docker (for containerized deployment)
+- logged in to github
+
+#### How to login to github
+I'll help you with logging into GitHub from Docker. Here's how to do it using personal access tokens (PATs), which is the recommended authentication method:
+
+First, create a GitHub Personal Access Token:
+
+Go to GitHub.com → Settings → Developer Settings → Personal Access Tokens → Tokens (classic)
+Click "Generate new token"
+Give it appropriate permissions (at minimum, read:packages and write:packages)
+Copy the generated token immediately (you won't be able to see it again)
+
+
+Log in to Docker using your GitHub credentials:
+
+```docker login ghcr.io -u YOUR_GITHUB_USERNAME```
+When prompted for password, enter your Personal Access Token (not your GitHub passwor
+
 
 ## Quick Start
 
